@@ -17,12 +17,22 @@ export async function createBooking(
   body: CreateBookingBody,
   actor: AuthenticatedUser,
 ): Promise<DbBooking> {
+  // Fetch shipper profile from DB — JWT only carries userId + role
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('full_name, phone_number, email')
+    .eq('id', actor.userId)
+    .single()
+
+  const shipperName    = userRow?.full_name ?? userRow?.email ?? 'Unknown'
+  const shipperContact = userRow?.phone_number ?? userRow?.email ?? ''
+
   const { data, error } = await supabase
     .from('bookings')
     .insert({
       shipper_id:           actor.userId,
-      shipper_name:         actor.fullName ?? actor.phoneNumber,
-      shipper_contact:      actor.phoneNumber,
+      shipper_name:         shipperName,
+      shipper_contact:      shipperContact,
       source_address:       body.source_address,
       source_lat:           body.source_lat,
       source_lng:           body.source_lng,
