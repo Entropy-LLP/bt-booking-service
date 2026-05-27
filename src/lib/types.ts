@@ -116,11 +116,8 @@ export type BookingWithProfiles = DbBooking & {
 export type UserRole = 'shipper' | 'driver' | 'admin'
 
 export type AuthenticatedUser = {
-  userId: string      // public.users.id
-  authId: string      // auth.users.id (JWT sub claim)
+  userId: string      // public.users.id (from JWT userId claim)
   role: UserRole
-  fullName: string | null
-  phoneNumber: string
 }
 
 // -----------------------------------------------------------
@@ -129,17 +126,25 @@ export type AuthenticatedUser = {
 // is filled server-side from the JWT — not accepted from client.
 // -----------------------------------------------------------
 
+const latitude  = z.number().min(-90).max(90)
+const longitude = z.number().min(-180).max(180)
+
 export const CreateBookingBodySchema = z.object({
   source_address:       z.string().min(1),
-  source_lat:           z.number(),
-  source_lng:           z.number(),
+  source_lat:           latitude,
+  source_lng:           longitude,
   destination_address:  z.string().min(1),
-  dest_lat:             z.number(),
-  dest_lng:             z.number(),
+  dest_lat:             latitude,
+  dest_lng:             longitude,
   load_type:            z.string().min(1),
   weight_kg:            z.number().positive(),
   quoted_price:         z.number().positive(),
-  pickup_date:          z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'pickup_date must be YYYY-MM-DD'),
+  pickup_date:          z.string()
+                          .regex(/^\d{4}-\d{2}-\d{2}$/, 'pickup_date must be YYYY-MM-DD')
+                          .refine(d => {
+                            const today = new Date(); today.setUTCHours(0, 0, 0, 0)
+                            return new Date(d + 'T00:00:00Z') >= today
+                          }, 'pickup_date cannot be in the past'),
   pickup_time_slot:     z.string().optional(),
   special_instructions: z.string().optional(),
   booking_type:         z.enum(['direct', 'auction']).default('direct'),

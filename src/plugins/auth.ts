@@ -1,13 +1,18 @@
 import fp from 'fastify-plugin'
 import type { FastifyPluginAsync } from 'fastify'
 import jwt from 'jsonwebtoken'
-import { supabase } from '../lib/supabase.js'
 import type { AuthenticatedUser } from '../lib/types.js'
 
 declare module 'fastify' {
   interface FastifyRequest {
     user: AuthenticatedUser
   }
+}
+
+interface AuthJwtPayload extends jwt.JwtPayload {
+  userId: string
+  role: string
+  phone?: string
 }
 
 const authPlugin: FastifyPluginAsync = async (app) => {
@@ -18,35 +23,21 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     }
 
     const token = header.slice(7)
-    let payload: jwt.JwtPayload
+    let payload: AuthJwtPayload
 
     try {
-      payload = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload
+      payload = jwt.verify(token, process.env.JWT_SECRET!) as AuthJwtPayload
     } catch {
       return reply.status(401).send({ success: false, error: 'Invalid or expired token' })
     }
 
-    const authId = payload.sub
-    if (!authId) {
-      return reply.status(401).send({ success: false, error: 'Token missing sub claim' })
-    }
-
-    const { data: userRow, error } = await supabase
-      .from('users')
-      .select('id, role, full_name, phone_number')
-      .eq('auth_id', authId)
-      .single()
-
-    if (error || !userRow) {
-      return reply.status(401).send({ success: false, error: 'User not found' })
+    if (!payload.userId) {
+      return reply.status(401).send({ success: false, error: 'Token missing userId claim' })
     }
 
     req.user = {
-      userId:      userRow.id,
-      authId,
-      role:        userRow.role,
-      fullName:    userRow.full_name,
-      phoneNumber: userRow.phone_number,
+      userId: payload.userId,
+      role:   payload.role as AuthenticatedUser['role'],
     }
   })
 }
