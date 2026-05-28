@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: bt-booking-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: "3002"
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PRICING_SERVICE_URL
+        sync: false
+      - key: CARGO_LEDGER_URL
+        sync: false
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+    healthCheckPath: /health
