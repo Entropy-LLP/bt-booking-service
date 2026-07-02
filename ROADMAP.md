@@ -5,17 +5,17 @@
 
 **Role:** The marketplace core — a shipper posts a point-to-point FTL/LTL load; drivers bid (auction) or accept a direct contract; both sides negotiate; the trip runs through its lifecycle to paid.
 
-**Status legend:** ✅ done · 🟡 partial · ⬜ to do · ⛔ stub
+**Status legend:** ✅ done · 🟡 partial · ⬜ to do · ⛔ stub · `(Wx-y)`/`(D-z)` tags = Entropy PMO work-item refs (auto-synced to the tracker — keep them on the line when you flip a checkbox)
 
 ---
 
 ## ✅ What's done
-- ✅ Two booking modes in the data model: `direct` (1:1, optional `target_driver_id`) vs `auction` (1:many, `auction_deadline`, `min_acceptable`).
-- ✅ **Bilateral negotiation** — both shipper and driver can counter (`PATCH .../counter`); append-only `negotiations` table as immutable offer log.
+- ✅ Two booking modes in the data model: `direct` (1:1, optional `target_driver_id`) vs `auction` (1:many, `auction_deadline`, `min_acceptable`). (D-3)
+- ✅ **Bilateral negotiation** — both shipper and driver can counter (`PATCH .../counter`); append-only `negotiations` table as immutable offer log. (D-4)
 - ✅ **Blind auction** at the repository layer (drivers see only their own quote; shipper/admin see all).
-- ✅ Optimistic-concurrency accept/award (conditional UPDATEs so only one racer wins).
+- ✅ Optimistic-concurrency accept/award (conditional UPDATEs so only one racer wins). (D-5)
 - ✅ Server-trusted identity (shipper_id/driver_id from JWT, never request body).
-- ✅ **Redis GPS ingest:** `POST /location/update`, `GET /location/booking/:id` (30s TTL, driver↔booking index keys).
+- ✅ **Redis GPS ingest:** `POST /location/update`, `GET /location/booking/:id` (30s TTL, driver↔booking index keys). (D-6)
 - ✅ Quote uniqueness `UNIQUE(booking_id, driver_id)` → clean `DUPLICATE_QUOTE` 409.
 
 ## ⛔ Critical gaps (lifecycle is half-built)
@@ -25,16 +25,16 @@
 - ⛔ Auctions never expire (`expireAuction()` stub; no `expired` status).
 
 ## ⬜ To do (MVP / P0)
-- ⬜ **Pickup-confirm endpoint** (`accepted → in_transit`).
-- ⬜ **Delivery endpoint** (`in_transit → completed`) triggered by **receiver POD-OTP** (see bt-cargo-ledger).
-- ⬜ Auction **expiry job** + add `expired` to the status enum.
-- ⬜ Enforce **5-round negotiation cap** + deadline expiry.
-- ⬜ Wrap `awardBooking` (3 writes) in a transaction/RPC (currently risks partial state).
-- ⬜ Wire integrations: on create → **pricing quote-lock**; on delivery → **payment release**; on checkpoint/delivery → **cargo-ledger**.
+- ⬜ **Pickup-confirm endpoint** (`accepted → in_transit`). (W3-1)
+- ⬜ **Delivery endpoint** (`in_transit → completed`) triggered by **receiver POD-OTP** (see bt-cargo-ledger). (W3-2)
+- ⬜ Auction **expiry job** + add `expired` to the status enum. (W3-3)
+- ⬜ Enforce **5-round negotiation cap** + deadline expiry. (W3-4)
+- ⬜ Wrap `awardBooking` (3 writes) in a transaction/RPC (currently risks partial state). (W3-5)
+- ⬜ Wire integrations: on create → **pricing quote-lock**; on delivery → **payment release**; on checkpoint/delivery → **cargo-ledger**. (W3-6)
 - ⬜ Real notifications via MSG91 / push (BullMQ workers).
-- ⬜ Enforce cancellation window (only before `in_transit`; README's "2h before pickup" rule unenforced).
-- ⬜ Persist GPS **breadcrumbs** (currently Redis-only, 30s TTL — no audit trail); idempotency/rate-limit on `/location/update`.
-- ⬜ **Commit DB migrations** (new bookings columns, quotes, negotiations) — currently only a comment block in `quote-repository.ts`.
+- ⬜ Enforce cancellation window (only before `in_transit`; README's "2h before pickup" rule unenforced). (W3-7)
+- ⬜ Persist GPS **breadcrumbs** (currently Redis-only, 30s TTL — no audit trail); idempotency/rate-limit on `/location/update`. (W5-1)
+- ⬜ **Commit DB migrations** (new bookings columns, quotes, negotiations) — currently only a comment block in `quote-repository.ts`. (W1-3)
 - ⬜ Sync README/API contract with code (lifecycle names, location body shape).
 
 ## 🔮 Deferred / out of MVP
